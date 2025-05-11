@@ -75,12 +75,8 @@ func newApolloConfiguration(url *common.URL) (*apolloConfiguration, error) {
 }
 
 func (c *apolloConfiguration) AddListener(key string, listener cc.ConfigurationListener, opts ...cc.Option) {
-	k := &cc.Options{}
-	for _, opt := range opts {
-		opt(k)
-	}
-
-	key = k.Center.Group + key
+	tmpOpts := cc.NewOptions(opts...)
+	key = tmpOpts.Center.Group + key
 	al := newApolloListener()
 	l, exist := c.listeners.LoadOrStore(key, al)
 	if !exist {
@@ -90,12 +86,8 @@ func (c *apolloConfiguration) AddListener(key string, listener cc.ConfigurationL
 }
 
 func (c *apolloConfiguration) RemoveListener(key string, listener cc.ConfigurationListener, opts ...cc.Option) {
-	k := &cc.Options{}
-	for _, opt := range opts {
-		opt(k)
-	}
-
-	key = k.Center.Group + key
+	tmpOpts := cc.NewOptions(opts...)
+	key = tmpOpts.Center.Group + key
 	l, ok := c.listeners.Load(key)
 	if ok {
 		l.(*apolloListener).RemoveListener(listener)
@@ -135,10 +127,6 @@ func (c *apolloConfiguration) GetProperties(key string, opts ...cc.Option) (stri
 	if c.client == nil {
 		return "", perrors.New("apollo client is not initialized")
 	}
-	/**
-	 * when group is not null, we are getting startup configs(config file) from ShutdownConfig Center, for example:
-	 * key=dubbo.propertie
-	 */
 	if key == "" {
 		key = c.appConf.NamespaceName
 	}
@@ -146,14 +134,11 @@ func (c *apolloConfiguration) GetProperties(key string, opts ...cc.Option) (stri
 	if tmpConfig == nil {
 		return "", perrors.New(fmt.Sprintf("nothing in namespace:%s ", key))
 	}
-
 	content := tmpConfig.GetContent()
 	b := []byte(content)
 	if len(b) == 0 {
 		return "", perrors.New(fmt.Sprintf("nothing in namespace:%s ", key))
 	}
-
-	content = string(b[8:]) //remove defalut content= prefix
 	return content, nil
 }
 
